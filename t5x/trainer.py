@@ -45,6 +45,7 @@ from t5x import train_state as train_state_lib
 from t5x import utils
 import typing_extensions
 
+import t5x.profile as profile
 
 Array = Union[np.ndarray, jnp.ndarray]
 BatchSpec = Mapping[str, jax.ShapeDtypeStruct]
@@ -63,7 +64,6 @@ if TYPE_CHECKING:  # See b/163639353
   cached_property = property  # pylint: disable=invalid-name
 else:
   cached_property = cached_property.cached_property
-
 
 @jax.jit
 def _merge_metrics(a, b):
@@ -509,6 +509,8 @@ class BaseTrainer(abc.ABC):
         logging.log_every_n_seconds(logging.INFO, "Training: step %d", 10,
                                     step_num)
         with jax.profiler.StepTraceAnnotation("train", step_num=step_num):
+          profile.startOrStopProfile(cur_step=step_num)
+
           batch = next(batch_iter)
           train_state, metrics_update = train_step_fn(train_state, batch)
           if metrics:
